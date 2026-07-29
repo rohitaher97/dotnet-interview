@@ -1,113 +1,124 @@
 # Solution Documentation
 
-**Candidate Name:** [Your Name]  
-**Completion Date:** [Date]
+**Candidate Name:** Rohit Gadewad  
+**Completion Date:** 2026-07-29
 
 ---
 
 ## Problems Identified
 
-_Describe the issues you found in the original implementation. Consider aspects like:_
-- Architecture and design patterns
-- Code quality and maintainability
-- Security vulnerabilities
-- Performance concerns
-- Testing gaps
-
-[Your analysis here]
+- The original implementation used POST-only endpoints for all actions, which is not RESTful.
+- `TodoController` created `TodoService` directly instead of using dependency injection.
+- SQL queries were built with string interpolation, introducing SQL injection risk.
+- There was no request validation and tests were not isolated or meaningful.
 
 ---
 
 ## Architectural Decisions
 
-_Explain the architecture you chose and why. Consider:_
-- Design patterns applied
-- Project structure changes
-- Technology choices
-- Separation of concerns
-
-[Your decisions here]
+- Added `ITodoService` and registered `TodoService` as a singleton service using dependency injection.
+- Kept the controller thin and moved database persistence into the service layer.
+- Used request DTOs (`TodoRequest`, `TodoUpdateRequest`) for input validation.
+- Implemented parameterized SQLite commands to prevent injection and added database initialization.
 
 ---
 
 ## Trade-offs
 
-_Discuss compromises you made and the reasoning behind them. Consider:_
-- What did you prioritize?
-- What did you defer or simplify?
-- What alternatives did you consider?
-
-[Your trade-offs here]
+- Used synchronous database access to align with the existing codebase and minimize refactor scope.
+- Chose a minimal service layer instead of introducing a full repository or ORM.
+- Focused on API correctness, test isolation, and safer SQL rather than adding additional features.
 
 ---
 
 ## How to Run
 
 ### Prerequisites
-[List required software, versions, etc.]
+
+- .NET 10 SDK
+- SQLite support on the local machine
 
 ### Build
+
 ```bash
-# Add your build commands
+cd "dotnet-interview"
+dotnet build
 ```
 
 ### Run
+
 ```bash
-# Add your run commands
+dotnet run --project TodoApi
 ```
 
 ### Test
+
 ```bash
-# Add your test commands
+dotnet test
 ```
 
 ---
 
 ## API Documentation
 
-### Endpoints
+### Create TODO
 
-#### Create TODO
 ```
-Method: [HTTP method]
-URL: [endpoint]
-Request Body: [example]
-Response: [example]
-```
-
-#### Get TODO(s)
-```
-Method: [HTTP method]
-URL: [endpoint]
-Request: [example]
-Response: [example]
+Method: POST
+URL: /api/todos
+Request Body:
+{
+  "title": "Buy groceries",
+  "description": "Milk, eggs, bread",
+  "isCompleted": false
+}
+Response: 201 Created
 ```
 
-#### Update TODO
+### Get all TODOs
+
 ```
-Method: [HTTP method]
-URL: [endpoint]
-Request Body: [example]
-Response: [example]
+Method: GET
+URL: /api/todos
+Response: 200 OK
 ```
 
-#### Delete TODO
+### Get TODO by id
+
 ```
-Method: [HTTP method]
-URL: [endpoint]
-Request: [example]
-Response: [example]
+Method: GET
+URL: /api/todos/{id}
+Response: 200 OK or 404 Not Found
+```
+
+### Update TODO
+
+```
+Method: PUT
+URL: /api/todos/{id}
+Request Body:
+{
+  "title": "Buy almond milk",
+  "description": "Use oat milk instead",
+  "isCompleted": true
+}
+Response: 200 OK
+```
+
+### Delete TODO
+
+```
+Method: DELETE
+URL: /api/todos/{id}
+Response: 204 No Content or 404 Not Found
 ```
 
 ---
 
 ## Future Improvements
 
-_What would you do if you had more time? Consider:_
-- Additional features
-- Performance optimizations
-- Enhanced testing
-- Better documentation
-- Deployment considerations
-
-[Your ideas here]
+- Add async database access and better error handling.
+- Add FluentValidation or data annotations for request validation.
+- Add API integration tests for end-to-end coverage.
+- Add database migrations and versioning.
+- Add swagger request/response schema documentation.

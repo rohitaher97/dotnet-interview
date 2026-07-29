@@ -12,6 +12,11 @@
 [Rr]elease/
 x64/
 x86/
+obj/
+bin/
+
+# SQLite database
+*.db
 
 # NuGet Packages
 *.nupkg

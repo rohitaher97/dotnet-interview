@@ -5,118 +5,73 @@ using TodoApi.Services;
 namespace TodoApi.Controllers
 {
     [ApiController]
-    [Route("api")]
+    [Route("api/todos")]
     public class TodoController : ControllerBase
     {
-        public TodoController()
+        private readonly ITodoService _todoService;
+
+        public TodoController(ITodoService todoService)
         {
+            _todoService = todoService;
         }
 
-        [HttpPost("createTodo")]
-        public IActionResult CreateTodo([FromBody] Todo todo)
+        [HttpPost]
+        public IActionResult CreateTodo([FromBody] TodoRequest request)
         {
-            try
+            if (string.IsNullOrWhiteSpace(request.Title))
             {
-                var todoService = new TodoService();
-                var result = todoService.CreateTodo(todo);
-                return Ok(result);
+                return BadRequest("Title is required.");
             }
-            catch (Exception ex)
+
+            var todo = new Todo
             {
-                return BadRequest(ex.Message);
-            }
+                Title = request.Title,
+                Description = request.Description,
+                IsCompleted = request.IsCompleted
+            };
+
+            var created = _todoService.CreateTodo(todo);
+            return CreatedAtAction(nameof(GetTodoById), new { id = created.Id }, created);
         }
 
-        [HttpPost("getTodo")]
-        public IActionResult GetTodo([FromBody] GetTodoRequest request)
+        [HttpGet]
+        public IActionResult GetTodos()
         {
-            try
-            {
-                var todoService = new TodoService();
-                if (request.Id.HasValue)
-                {
-                    var todo = todoService.GetTodoById(request.Id.Value);
-                    if (todo == null)
-                    {
-                        return NotFound();
-                    }
-                    return Ok(todo);
-                }
-                else
-                {
-                    var todos = todoService.GetAllTodos();
-                    return Ok(todos);
-                }
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var todos = _todoService.GetAllTodos();
+            return Ok(todos);
         }
 
-        [HttpPost("updateTodo")]
-        public IActionResult UpdateTodo([FromBody] UpdateTodoRequest request)
+        [HttpGet("{id:int}")]
+        public IActionResult GetTodoById(int id)
         {
-            try
-            {
-                var todoService = new TodoService();
-                var existingTodo = todoService.GetTodoById(request.Id);
-                if (existingTodo == null)
-                {
-                    return NotFound();
-                }
-
-                var todo = new Todo
-                {
-                    Title = request.Title,
-                    Description = request.Description,
-                    IsCompleted = request.IsCompleted
-                };
-
-                var result = todoService.UpdateTodo(request.Id, todo);
-                return Ok(result);
-            }
-            catch (Exception ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            var todo = _todoService.GetTodoById(id);
+            return todo is null ? NotFound() : Ok(todo);
         }
 
-        [HttpPost("deleteTodo")]
-        public IActionResult DeleteTodo([FromBody] DeleteTodoRequest request)
+        [HttpPut("{id:int}")]
+        public IActionResult UpdateTodo(int id, [FromBody] TodoUpdateRequest request)
         {
-            try
+            if (string.IsNullOrWhiteSpace(request.Title))
             {
-                var todoService = new TodoService();
-                var result = todoService.DeleteTodo(request.Id);
-                if (result)
-                {
-                    return Ok(new { message = "Todo deleted successfully" });
-                }
-                return NotFound();
+                return BadRequest("Title is required.");
             }
-            catch (Exception ex)
+
+            var todo = new Todo
             {
-                return BadRequest(ex.Message);
-            }
+                Title = request.Title,
+                Description = request.Description,
+                IsCompleted = request.IsCompleted
+            };
+
+            var updated = _todoService.UpdateTodo(id, todo);
+            return updated is null ? NotFound() : Ok(updated);
         }
-    }
 
-    public class GetTodoRequest
-    {
-        public int? Id { get; set; }
-    }
-
-    public class UpdateTodoRequest
-    {
-        public int Id { get; set; }
-        public string Title { get; set; }
-        public string Description { get; set; }
-        public bool IsCompleted { get; set; }
-    }
-
-    public class DeleteTodoRequest
-    {
-        public int Id { get; set; }
+        [HttpDelete("{id:int}")]
+        public IActionResult DeleteTodo(int id)
+        {
+            var deleted = _todoService.DeleteTodo(id);
+            return deleted ? NoContent() : NotFound();
+        }
     }
 }
